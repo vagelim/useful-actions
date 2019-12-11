@@ -1,0 +1,19 @@
+name: 'AWS ID check'
+on:
+  - pull_request
+jobs:
+  terraform:
+    name: 'Verify account id'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@master
+      - name: 'Grep for account ids'
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        run: |
+          grep --exclude=\*.tfstate --include=\*.tf -Rn "arn:aws:iam::[0-9]" . | \
+          grep -v $AWS_ACCOUNT_ID | \
+          grep -v no-check && "External account ids found. Mark known external accounts with # no-check" && \
+          exit -1
