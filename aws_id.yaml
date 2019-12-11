@@ -13,7 +13,9 @@ jobs:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
-          grep --exclude=\*.tfstate --include=\*.tf -Rn "arn:aws:iam::[0-9]" . | \
+          grep --exclude=\*.tfstate --exclude-dir=.terraform --include=\*.tf -Rn \
+          "arn:aws:iam::[0-9]" . | \
           grep -v $AWS_ACCOUNT_ID | \
-          grep -v no-check && "External account ids found. Mark known external accounts with # no-check" && \
-          exit -1
+          grep -v no-check && echo "External account ids found. Mark known external accounts with # no-check" && \
+          exit -1 || \
+          exit 0
