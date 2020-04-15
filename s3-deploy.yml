@@ -1,0 +1,41 @@
+name: Deploy and flush cache
+
+# Required secrets:
+# AWS_ACCESS_KEY_ID
+# AWS_SECRET_ACCESS_KEY
+# AWS_S3_BUCKET
+# AWS_DISTRIBUTION_ID
+# Modify SOURCE_DIR below if needed
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Push to s3
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          SOURCE_DIR: "."
+        run: |
+         aws s3 sync $SOURCE_DIR s3://$AWS_S3_BUCKET
+
+      - name: Bust cache
+        env:
+          AWS_DISTRIBUTION_ID: ${{ secrets.AWS_DISTRIBUTION_ID }}
+        run: |
+         aws cloudfront create-invalidation --distribution-id $AWS_DISTRIBUTION_ID --paths "/*" "/**/*"
